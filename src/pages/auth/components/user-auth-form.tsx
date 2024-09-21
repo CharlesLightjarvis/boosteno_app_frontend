@@ -20,18 +20,20 @@ import axios from '../../../axios'
 
 interface UserAuthFormProps extends HTMLAttributes<HTMLDivElement> {}
 
+// Fonction pour obtenir le cookie
 const getCookie = (name: string) => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
   if (parts.length === 2) return parts.pop()?.split(';').shift()
 }
 
-const login = async (email: string, password: string) => {
+// Fonction de login
+const login = async (email: string, password: string, navigate: any) => {
   try {
     // Obtenir le cookie CSRF
     await axios.get('/sanctum/csrf-cookie')
     console.log('CSRF cookie obtained')
-    // Afficher le cookie CSRF
+
     const csrfToken = getCookie('XSRF-TOKEN')
     if (csrfToken) {
       console.log(decodeURIComponent(csrfToken))
@@ -52,8 +54,8 @@ const login = async (email: string, password: string) => {
       console.log(response.data)
       console.log('Login successful')
 
-      // Rediriger vers le tableau de bord
-      return true
+      // Rediriger vers le tableau de bord après le succès du login
+      navigate('/')
     } else {
       throw new Error('CSRF token not found')
     }
@@ -80,7 +82,7 @@ const formSchema = z.object({
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
+  const navigate = useNavigate() // Appelle useNavigate à l'intérieur du composant
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,11 +94,11 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
-    const success = await login(data.email, data.password)
+    const success = await login(data.email, data.password, navigate)
     setIsLoading(false)
 
     if (success) {
-      navigate('/') // Redirige après succès
+      navigate('/') // Redirection après succès
     }
   }
 

@@ -111,7 +111,7 @@ const router = createBrowserRouter([
       {
         path: 'users',
         lazy: roleGuard(
-          (await import('./components/coming-soon')).default,
+          (await import('./pages/users')).default,
           ['admin'] // Accès réservé aux admins uniquement
         ),
       },
