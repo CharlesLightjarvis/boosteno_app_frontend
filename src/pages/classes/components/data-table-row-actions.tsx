@@ -15,12 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { deleteUser } from '../../../store/userSlice'
-import { AppDispatch } from '../../../store/store'
-import { ViewUserDialog } from '../data/view-user-dialog'
+import { AppDispatch } from '../../../store/store' // Remplace par le bon chemin vers store
+import { deleteClass, fetchClasses } from '../../../store/classesSlice' // Action redux pour supprimer et récupérer les classes
+import { toast } from 'sonner'
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
@@ -29,16 +28,22 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const user = row.original
+  const classe = row.original
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const dispatch = useDispatch<AppDispatch>()
 
+  // Fonction pour gérer la suppression
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      await dispatch(deleteUser(user.id)).unwrap()
-      toast.success('Utilisateur supprimé avec succès')
+      // Appelle l'action Redux pour supprimer la classe
+      await dispatch(deleteClass(classe.id)).unwrap()
+      toast.success('Classe supprimée avec succès')
+
+      // Actualiser les classes après la suppression
+      await dispatch(fetchClasses())
+
       setOpenDeleteDialog(false)
     } catch (error) {
       console.error('Erreur lors de la suppression :', error)
@@ -51,7 +56,7 @@ export function DataTableRowActions<TData>({
   return (
     <div className='flex items-center'>
       <Button variant='ghost' className='flex h-8 w-8 p-0'>
-        <ViewUserDialog userId={user.id} />
+        <EyeOpenIcon className='mr-2 h-4 w-4' />
         <span className='sr-only'>View</span>
       </Button>
       <DropdownMenu>
@@ -65,7 +70,7 @@ export function DataTableRowActions<TData>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' className='w-[160px]'>
-          <Link to={`/users/edit/${user.id}`}>
+          <Link to={`/classes/edit/${classe.id}`}>
             <DropdownMenuItem>Edit</DropdownMenuItem>
           </Link>
           <DropdownMenuItem onSelect={() => setOpenDeleteDialog(true)}>
@@ -74,15 +79,15 @@ export function DataTableRowActions<TData>({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Confirmation Dialog */}
+      {/* Dialog pour confirmation de suppression */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
           </DialogHeader>
           <p>
-            Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action
-            est irréversible.
+            Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est
+            irréversible.
           </p>
           <DialogFooter>
             <Button variant='ghost' onClick={() => setOpenDeleteDialog(false)}>
@@ -100,11 +105,4 @@ export function DataTableRowActions<TData>({
       </Dialog>
     </div>
   )
-}
-
-// Fonction pour récupérer le token CSRF
-const getCookie = (name: string) => {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop()?.split(';').shift()
 }

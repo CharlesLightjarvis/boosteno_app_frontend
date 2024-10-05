@@ -95,11 +95,12 @@ function NavLink({
       onClick={closeNav}
       className={cn(
         buttonVariants({
-          variant: checkActiveNav(href) ? 'secondary' : 'ghost',
+          variant: checkActiveNav(href) ? '' : 'ghost',
           size: 'sm',
         }),
         'h-12 justify-start text-wrap rounded-none px-6',
-        subLink && 'h-10 w-full border-l border-l-slate-500 px-2'
+        subLink && 'h-10 w-full border-l border-l-slate-500 px-2',
+        checkActiveNav(href) && 'bg-blue-500 text-white' // Appliquer bg-blue-500 si actif
       )}
       aria-current={checkActiveNav(href) ? 'page' : undefined}
     >

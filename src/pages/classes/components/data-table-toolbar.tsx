@@ -5,7 +5,7 @@ import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { DataTableViewOptions } from '../components/data-table-view-options'
 
-import { roles, statuses } from '../data/data'
+import { statuses } from '../data/data'
 import { DataTableFacetedFilter } from './data-table-faceted-filter'
 import { Link } from 'react-router-dom'
 
@@ -22,10 +22,10 @@ export function DataTableToolbar<TData>({
     <div className='flex items-center justify-between'>
       <div className='flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2'>
         <Input
-          placeholder='Filtrer par CNI...'
-          value={(table.getColumn('cni')?.getFilterValue() as string) ?? ''}
+          placeholder='Filtrer par Uuid...'
+          value={(table.getColumn('uuid')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
-            table.getColumn('cni')?.setFilterValue(event.target.value)
+            table.getColumn('uuid')?.setFilterValue(event.target.value)
           }
           className='h-8 w-[150px] lg:w-[250px]'
         />
@@ -37,13 +37,13 @@ export function DataTableToolbar<TData>({
               options={statuses}
             />
           )}
-          {table.getColumn('role') && (
+          {/* {table.getColumn('role') && (
             <DataTableFacetedFilter
               column={table.getColumn('role')}
               title='Role'
               options={roles}
             />
-          )}
+          )} */}
         </div>
         {isFiltered && (
           <Button
@@ -58,7 +58,7 @@ export function DataTableToolbar<TData>({
       </div>
       {/* Insertion du bouton pour ajouter un utilisateur */}
       {/* <AddUserDialog /> */}
-      <Link to='/users/addNewUser'>
+      <Link to='/classes/addNewClasse'>
         <Button className='mr-2 bg-blue-500 text-white'>
           <PlusIcon className='mr-2 h-4 w-4' /> Nouveau
         </Button>

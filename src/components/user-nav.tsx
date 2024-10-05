@@ -13,9 +13,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import axios from '../axios'
 import { useNavigate } from 'react-router-dom'
+import { AvatarIcon } from '@radix-ui/react-icons'
 
 export function UserNav() {
-  const [user, setUser] = useState({ name: '', surname: '', email: '' })
+  const [user, setUser] = useState({
+    name: '',
+    surname: '',
+    email: '',
+    photo: '',
+  })
   const navigate = useNavigate()
 
   const getCookie = (name: string) => {
@@ -35,6 +41,12 @@ export function UserNav() {
         console.error('Error fetching user details:', error)
       })
   }, [])
+
+  const photoPath = user.photo
+
+  // Ajouter le préfixe complet pour l'URL de base
+  const baseUrl = 'http://boostlearn.test/storage/' // Utilisez votre domaine
+  const imageUrl = photoPath ? `${baseUrl}${photoPath}` : null
 
   const handleLogout = async () => {
     // Envoie la requête de déconnexion au backend
@@ -65,15 +77,18 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
-          <Avatar className='h-8 w-8'>
-            <AvatarImage
-              src='/avatars/01.png'
-              alt={`${user.name} ${user.surname}`}
-            />
-            <AvatarFallback>
-              {user.name.charAt(0)}
-              {user.surname.charAt(0)}
-            </AvatarFallback>
+          <Avatar className='h-10 w-10'>
+            {imageUrl ? (
+              <AvatarImage
+                src={imageUrl}
+                alt='User photo'
+                className='h-full w-full object-cover object-center'
+              />
+            ) : (
+              <AvatarFallback>
+                <AvatarIcon className='h-8 w-8' />
+              </AvatarFallback>
+            )}
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

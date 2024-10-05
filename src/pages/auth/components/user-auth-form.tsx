@@ -30,37 +30,23 @@ const getCookie = (name: string) => {
 // Fonction de login
 const login = async (email: string, password: string, navigate: any) => {
   try {
-    // Obtenir le cookie CSRF
     await axios.get('/sanctum/csrf-cookie')
-    console.log('CSRF cookie obtained')
-
     const csrfToken = getCookie('XSRF-TOKEN')
     if (csrfToken) {
-      console.log(decodeURIComponent(csrfToken))
-
-      // Envoyer la requête de login
       const response = await axios.post(
         'api/v1/public/login',
-        {
-          email,
-          password,
-        },
-        {
-          headers: {
-            'X-XSRF-TOKEN': decodeURIComponent(csrfToken),
-          },
-        }
+        { email, password },
+        { headers: { 'X-XSRF-TOKEN': decodeURIComponent(csrfToken) } }
       )
-      console.log(response.data)
-      console.log('Login successful')
+      console.log('Login successful', response.data)
 
-      // Rediriger vers le tableau de bord après le succès du login
-      navigate('/')
+      // Renvoyer true en cas de succès
+      return true
     } else {
       throw new Error('CSRF token not found')
     }
   } catch (error) {
-    console.error(error)
+    console.error('Login failed', error)
     return false
   }
 }
@@ -97,8 +83,11 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const success = await login(data.email, data.password, navigate)
     setIsLoading(false)
 
+    console.log('Login success:', success) // Vérifie si le succès est bien renvoyé
+
     if (success) {
-      navigate('/') // Redirection après succès
+      console.log('Navigating to /')
+      navigate('/users') // Redirige vers la page principale
     }
   }
 

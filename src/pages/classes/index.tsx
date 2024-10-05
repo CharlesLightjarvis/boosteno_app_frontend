@@ -1,7 +1,4 @@
 import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState, AppDispatch } from '../../store/store'
-import { fetchUsers } from '../../store/userSlice'
 import { Layout } from '@/components/custom/layout'
 import { Search } from '@/components/search'
 import ThemeSwitch from '@/components/theme-switch'
@@ -9,16 +6,21 @@ import { UserNav } from '@/components/user-nav'
 import { DataTable } from './components/data-table'
 import { columns } from './components/columns'
 import { LoadingSpinner } from '../../components/custom/loadingspinner'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RolesPermissions from '../roles/roles-permissions'
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState, AppDispatch } from '../../store/store' // Adapter les bons chemins
+import { fetchClasses } from '../../store/classesSlice' // Action Redux pour récupérer les classes
 
-export default function Users() {
+export default function Classes() {
   const dispatch = useDispatch<AppDispatch>()
-  const { data: users, status } = useSelector((state: RootState) => state.users)
+  const { data: classes, status } = useSelector(
+    (state: RootState) => state.classes
+  )
 
+  // Utilisation de useEffect pour charger les données dès que le composant est monté
   useEffect(() => {
-    dispatch(fetchUsers())
+    dispatch(fetchClasses()) // Dispatch de l'action pour récupérer les classes
   }, [dispatch])
 
   return (
@@ -34,23 +36,20 @@ export default function Users() {
       <Layout.Body>
         <Tabs
           orientation='vertical'
-          defaultValue='utilisateurs'
+          defaultValue='classes'
           className='space-y-4'
         >
           <div className='w-full overflow-x-auto pb-2'>
             <TabsList>
-              <TabsTrigger value='utilisateurs'>Utilisateurs</TabsTrigger>
-              <TabsTrigger value='roles'>Roles & Permissions</TabsTrigger>
+              <TabsTrigger value='classes'>Classes</TabsTrigger>
+              <TabsTrigger value='roles'>Demandes</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value='utilisateurs' className='space-y-4'>
+          <TabsContent value='classes' className='space-y-4'>
             <div className='mb-2 flex items-center justify-between space-y-2'>
               <div>
-                {/* <h2 className='text-2xl font-bold tracking-tight'>
-                  Bienvenue!
-                </h2> */}
                 <p className='text-muted-foreground'>
-                  Ici vous pouvez gérer la liste des utilisateurs!
+                  Ici vous pouvez gérer les classes!
                 </p>
               </div>
             </div>
@@ -61,10 +60,10 @@ export default function Users() {
               </div>
             ) : (
               <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
-                {users.length === 0 ? (
-                  <div>Aucun utilisateur trouvé.</div>
+                {classes.length === 0 ? (
+                  <div>Aucune Classe trouvée.</div>
                 ) : (
-                  <DataTable data={users} columns={columns} />
+                  <DataTable data={classes} columns={columns} />
                 )}
               </div>
             )}

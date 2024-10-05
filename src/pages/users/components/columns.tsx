@@ -43,19 +43,19 @@ export const columns: ColumnDef<User>[] = [
   //   enableSorting: false,
   //   enableHiding: false,
   // },
-  // {
-  //   accessorKey: 'uuid',
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title='Uuid' />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <div className='flex space-x-2'>
-  //       <span className='max-w-32 truncate font-medium sm:max-w-72 md:max-w-[31rem]'>
-  //         {row.getValue('uuid')}
-  //       </span>
-  //     </div>
-  //   ),
-  // },
+  {
+    accessorKey: 'uuid',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Uuid' />
+    ),
+    cell: ({ row }) => (
+      <div className='flex space-x-2'>
+        <span className='max-w-32 truncate font-medium sm:max-w-72 md:max-w-[31rem]'>
+          {row.getValue('uuid')}
+        </span>
+      </div>
+    ),
+  },
   {
     accessorKey: 'photo',
     header: ({ column }) => <DataTableColumnHeader column={column} title='' />,
@@ -80,7 +80,7 @@ export const columns: ColumnDef<User>[] = [
               />
             ) : (
               <AvatarFallback>
-                <AvatarIcon className='h-8 w-8' />
+                <AvatarIcon className='h-10 w-10' />
               </AvatarFallback>
             )}
           </Avatar>
@@ -194,7 +194,7 @@ export const columns: ColumnDef<User>[] = [
   {
     accessorKey: 'joinedDate',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Date Adhésion' />
+      <DataTableColumnHeader column={column} title='Adhésion' />
     ),
     cell: ({ row }) => (
       <div className='flex space-x-2'>

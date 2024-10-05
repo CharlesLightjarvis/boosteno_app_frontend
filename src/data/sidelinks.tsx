@@ -21,6 +21,7 @@ import {
   IconUserShield,
   IconUsers,
   IconLock,
+  IconSchool,
 } from '@tabler/icons-react'
 
 export interface NavLink {
@@ -42,6 +43,20 @@ export const sidelinks: SideLink[] = [
     href: '/',
     icon: <IconLayoutDashboard size={18} />,
     allowedRoles: ['admin', 'student'], // Accessible pour admin et student
+  },
+  {
+    title: 'Users',
+    label: '',
+    href: '/users',
+    icon: <IconUsers size={18} />,
+    allowedRoles: ['admin'], // Accessible uniquement pour admin
+  },
+  {
+    title: 'Classes',
+    label: '',
+    href: '/classes',
+    icon: <IconSchool size={18} />,
+    allowedRoles: ['admin'], // Accessible uniquement pour admin
   },
   {
     title: 'Tasks',
@@ -103,13 +118,7 @@ export const sidelinks: SideLink[] = [
       },
     ],
   },
-  {
-    title: 'Users',
-    label: '',
-    href: '/users',
-    icon: <IconUsers size={18} />,
-    allowedRoles: ['admin'], // Accessible uniquement pour admin
-  },
+
   {
     title: 'Requests',
     label: '10',

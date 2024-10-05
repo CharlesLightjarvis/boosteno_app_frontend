@@ -1,8 +1,12 @@
-// import axios from 'axios'
+import { Layout } from '@/components/custom/layout'
+import { Search } from '@/components/search'
+import { Separator } from '@/components/ui/separator'
+import ThemeSwitch from '@/components/theme-switch'
+import { UserNav } from '@/components/user-nav'
 import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
-import { CalendarIcon, PlusIcon } from '@radix-ui/react-icons'
-import { useState, useEffect } from 'react'
+import { CalendarIcon } from '@radix-ui/react-icons'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,11 +15,6 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Calendar } from '@/components/ui/calendar'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import {
   Select,
   SelectContent,
   SelectGroup,
@@ -23,20 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { toast } from 'sonner' // Assurez-vous que le composant Toast est bien importé
-import { useDispatch } from 'react-redux'
-import { createUser } from '../../../store/userSlice'
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-
+import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import axios from '../../../../src/axios'
+import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 
 // Schéma de validation Zod pour l'utilisateur
 const userSchema = z.object({
@@ -51,17 +46,34 @@ const userSchema = z.object({
   joinedDate: z.date().nullable(),
 })
 
-// const getCookie = (name: string) => {
-//   const value = `; ${document.cookie}`
-//   const parts = value.split(`; ${name}=`)
-//   if (parts.length === 2) return parts.pop()?.split(';').shift()
-// }
+// Fonction de récupération des cookies, y compris le X-XSRF-TOKEN
+const getCookie = (name: string) => {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift()
+}
 
-export function AddUserDialog() {
-  const [isOpen, setIsOpen] = useState(false)
+export default function AddUserComponent() {
   const [date, setDate] = useState<Date | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const dispatch = useDispatch()
+  const [photoFile, setPhotoFile] = useState<File | null>(null) // Ajout d'un état pour le fichier photo
+  const navigate = useNavigate()
+
+  const [roles, setRoles] = useState([])
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get('/api/v1/admin/roles') // Remplacez l'URL par celle appropriée
+        setRoles(response.data.data) // Stockez les rôles dans l'état
+      } catch (error) {
+        console.error('Erreur lors de la récupération des rôles:', error)
+        toast.error('Erreur lors de la récupération des rôles')
+      }
+    }
+
+    fetchRoles()
+  }, [])
 
   const {
     register,
@@ -86,7 +98,10 @@ export function AddUserDialog() {
     },
   })
 
+  // Fonction soumise du formulaire avec Axios et redirection
   const onSubmit = async (data: any) => {
+    setIsLoading(true)
+
     if (!date) {
       setError('joinedDate', {
         type: 'manual',
@@ -95,46 +110,99 @@ export function AddUserDialog() {
       return
     }
 
-    clearErrors('joinedDate')
-
     const formattedDate = format(date, 'yyyy-MM-dd')
     data.joinedDate = formattedDate
 
     try {
-      setIsLoading(true)
-      await dispatch(createUser(data))
-      setIsLoading(false)
+      // Créer un objet FormData
+      const formData = new FormData()
+      formData.append('cni', data.cni)
+      formData.append('name', data.name)
+      formData.append('surname', data.surname)
+      formData.append('email', data.email)
+      formData.append('phone_number', data.phone_number)
+      formData.append('address', data.address)
+      formData.append('role', data.role)
+      formData.append('joinedDate', data.joinedDate || '')
 
-      setIsOpen(false)
-    } catch (error) {
-      console.error('Error adding user:', error)
-      toast.error("Erreur lors de l'ajout de l'utilisateur.")
+      if (photoFile) {
+        formData.append('photo', photoFile) // Ajout du fichier photo si sélectionné
+      }
+
+      const xsrfToken = getCookie('XSRF-TOKEN')
+      const response = await axios.post('/api/v1/admin/users', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // Important pour gérer les fichiers
+          'X-XSRF-TOKEN': xsrfToken ? decodeURIComponent(xsrfToken) : '',
+        },
+      })
+
+      console.log(response.data)
+
+      console.log('Utilisateur ajouté, redirection en cours...')
+      reset() // Réinitialiser le formulaire
+      navigate('/users') // Redirection vers la page des utilisateurs
+      toast.success('Utilisateur ajouté avec succès')
+    } catch (error: any) {
+      // Affiche des détails d'erreur dans la console pour débogage
+      if (error.response) {
+        // Erreur de réponse du serveur
+        console.error('Erreur de réponse:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        })
+      } else if (error.request) {
+        // Aucune réponse reçue du serveur (par exemple, problème réseau)
+        console.error('Aucune réponse du serveur:', error.request)
+      } else {
+        // Autre erreur (avant la requête)
+        console.error('Erreur de requête:', error.message)
+      }
+
+      toast.error("Une erreur est survenue lors de l'ajout")
+      setError('submit', {
+        type: 'manual',
+        message: 'Failed to submit form',
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  useEffect(() => {
-    if (!isOpen) {
-      reset()
-      setDate(null)
+  // Gestion du fichier photo
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file) // Mise à jour de l'état avec le fichier sélectionné
     }
-  }, [isOpen, reset])
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant='secondary' className='mr-2'>
-          <PlusIcon className='mr-2 h-4 w-4' /> Nouveau
-        </Button>
-      </DialogTrigger>
-      <DialogContent className='max-h-[80vh] overflow-y-scroll scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-400 scrollbar-thumb-rounded sm:max-w-[500px]'>
-        <DialogHeader>
-          <DialogTitle>Ajout Utilisateur</DialogTitle>
-          <DialogDescription>
+    <Layout>
+      <Layout.Header sticky>
+        <Search />
+        <div className='ml-auto flex items-center space-x-4'>
+          <ThemeSwitch />
+          <UserNav />
+        </div>
+      </Layout.Header>
+
+      <Layout.Body>
+        <div className='space-y-0.5'>
+          <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+            Ajout Utilisateur
+          </h1>
+          <p className='text-muted-foreground'>
             Renseignez les champs nécessaires pour ajouter un utilisateur
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
+        <Separator className='my-4 lg:my-6' />
+
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-          <div className=''>
+          {/* Grid pour deux colonnes */}
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            {/* Colonne 1 */}
             <div>
               <Label>CNI</Label>
               <Input {...register('cni')} placeholder='123456789' />
@@ -142,6 +210,7 @@ export function AddUserDialog() {
                 <p className='text-sm text-red-500'>{errors.cni.message}</p>
               )}
             </div>
+
             <div>
               <Label>Nom</Label>
               <Input {...register('name')} placeholder='Nom' />
@@ -149,6 +218,8 @@ export function AddUserDialog() {
                 <p className='text-sm text-red-500'>{errors.name.message}</p>
               )}
             </div>
+
+            {/* Colonne 2 */}
             <div>
               <Label>Prénom</Label>
               <Input {...register('surname')} placeholder='Prénom' />
@@ -156,6 +227,7 @@ export function AddUserDialog() {
                 <p className='text-sm text-red-500'>{errors.surname.message}</p>
               )}
             </div>
+
             <div>
               <Label>Email</Label>
               <Input {...register('email')} placeholder='name@example.com' />
@@ -163,6 +235,8 @@ export function AddUserDialog() {
                 <p className='text-sm text-red-500'>{errors.email.message}</p>
               )}
             </div>
+
+            {/* Autres champs */}
             <div>
               <Label>Téléphone</Label>
               <Input {...register('phone_number')} placeholder='1234567890' />
@@ -172,9 +246,9 @@ export function AddUserDialog() {
                 </p>
               )}
             </div>
+
             <div>
-              <Label>Adhésion</Label>
-              <br />
+              <Label>Date d'adhésion</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -211,6 +285,7 @@ export function AddUserDialog() {
                 </p>
               )}
             </div>
+
             <div>
               <Label>Adresse</Label>
               <Textarea {...register('address')} placeholder='Adresse' />
@@ -218,6 +293,7 @@ export function AddUserDialog() {
                 <p className='text-sm text-red-500'>{errors.address.message}</p>
               )}
             </div>
+
             <div>
               <Label>Attribution</Label>
               <Select onValueChange={(value) => setValue('role', value)}>
@@ -226,9 +302,15 @@ export function AddUserDialog() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value='admin'>Administrateur</SelectItem>
-                    <SelectItem value='student'>Etudiant</SelectItem>
-                    <SelectItem value='teacher'>Professeur</SelectItem>
+                    {roles.length > 0 ? (
+                      roles.map((role) => (
+                        <SelectItem key={role.id} value={role.name}>
+                          {role.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem disabled>Aucun rôle disponible</SelectItem>
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -236,19 +318,26 @@ export function AddUserDialog() {
                 <p className='text-sm text-red-500'>{errors.role.message}</p>
               )}
             </div>
-            <div className='col-span-2'>
-              <Label>Photo (URL)</Label>
-              <Input {...register('photo')} type='file' />
+
+            <div className='md:col-span-2'>
+              <Label>Photo (Fichier)</Label>
+              <Input
+                type='file'
+                accept='image/*'
+                onChange={handlePhotoChange} // Gestion du fichier photo
+              />
               {errors.photo && (
                 <p className='text-sm text-red-500'>{errors.photo.message}</p>
               )}
             </div>
           </div>
+
+          {/* Bouton soumettre */}
           <Button type='submit' className='w-full' loading={isLoading}>
             Ajouter Utilisateur
           </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Layout.Body>
+    </Layout>
   )
 }

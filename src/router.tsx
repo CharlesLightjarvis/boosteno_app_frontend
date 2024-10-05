@@ -5,6 +5,7 @@ import NotFoundError from './pages/errors/not-found-error'
 import MaintenanceError from './pages/errors/maintenance-error'
 import UnauthorisedError from './pages/errors/unauthorised-error'
 import { checkAuth } from './auth-service'
+// import { Component } from 'react'
 
 // Fonction pour limiter l'accès basé sur le rôle
 const roleGuard = (Component, allowedRoles) => async () => {
@@ -98,7 +99,7 @@ const router = createBrowserRouter([
         path: 'chats',
         lazy: roleGuard(
           (await import('./pages/chats')).default,
-          ['student'] // Accès pour plusieurs rôles
+          ['student', 'admin'] // Accès pour plusieurs rôles
         ),
       },
       {
@@ -112,6 +113,41 @@ const router = createBrowserRouter([
         path: 'users',
         lazy: roleGuard(
           (await import('./pages/users')).default,
+          ['admin'] // Accès réservé aux admins uniquement
+        ),
+      },
+      {
+        path: 'classes',
+        lazy: roleGuard(
+          (await import('./pages/classes')).default,
+          ['admin'] // Accès réservé aux admins uniquement
+        ),
+      },
+      {
+        path: 'users/addNewUser',
+        lazy: roleGuard(
+          (await import('./pages/users/add-users')).default,
+          ['admin'] // Accès réservé aux admins uniquement
+        ),
+      },
+      {
+        path: 'classes/addNewClasse',
+        lazy: roleGuard(
+          (await import('./pages/classes/add-classes')).default,
+          ['admin'] // Accès réservé aux admins uniquement
+        ),
+      },
+      {
+        path: 'users/edit/:id',
+        lazy: roleGuard(
+          (await import('./pages/users/edit-users')).default,
+          ['admin'] // Accès réservé aux admins uniquement
+        ),
+      },
+      {
+        path: 'classes/edit/:id',
+        lazy: roleGuard(
+          (await import('./pages/classes/edit-classes')).default,
           ['admin'] // Accès réservé aux admins uniquement
         ),
       },
