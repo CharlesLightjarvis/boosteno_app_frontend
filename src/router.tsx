@@ -152,6 +152,13 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: 'classes/show/:id',
+        lazy: roleGuard(
+          (await import('./pages/classes/show-classes')).default,
+          ['admin'] // Accès réservé aux admins uniquement
+        ),
+      },
+      {
         path: 'settings',
         lazy: async () => ({
           Component: (await import('./pages/settings')).default,

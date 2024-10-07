@@ -15,11 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Link } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
-import { AppDispatch } from '../../../store/store' // Remplace par le bon chemin vers store
-import { deleteClass, fetchClasses } from '../../../store/classesSlice' // Action redux pour supprimer et récupérer les classes
 import { toast } from 'sonner'
+import { Link, useParams } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { removeStudent } from '../../../../store/studentsSlice' // Importer removeStudent
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
@@ -28,26 +27,32 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const classe = row.original
+  const { id: classeId } = useParams() // Récupérer l'id de la classe depuis les paramètres de l'URL
+  const student = row.original // Assure que chaque row contient bien l'objet "student"
+  const dispatch = useDispatch() // Utiliser useDispatch pour appeler removeStudent
+
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
 
-  // Fonction pour gérer la suppression
   const handleDelete = async () => {
+    if (!student.id) {
+      toast.error('ID étudiant introuvable')
+      return
+    }
+
     setIsDeleting(true)
+
     try {
-      // Appelle l'action Redux pour supprimer la classe
-      await dispatch(deleteClass(classe.id)).unwrap()
-      toast.success('Classe supprimée avec succès')
+      // Appeler removeStudent via Redux thunk
+      await dispatch(
+        removeStudent({ classeId, studentId: student.id })
+      ).unwrap()
 
-      // Actualiser les classes après la suppression
-      await dispatch(fetchClasses())
-
+      toast.success('Étudiant retiré de la classe avec succès')
       setOpenDeleteDialog(false)
     } catch (error) {
-      console.error('Erreur lors de la suppression :', error)
-      toast.error('Une erreur est survenue lors de la suppression')
+      console.error("Erreur lors du retrait de l'étudiant:", error)
+      toast.error("Erreur lors du retrait de l'étudiant")
     } finally {
       setIsDeleting(false)
     }
@@ -56,7 +61,7 @@ export function DataTableRowActions<TData>({
   return (
     <div className='flex items-center'>
       <Button variant='ghost' className='flex h-8 w-8 p-0'>
-        <Link to={`/classes/show/${classe.id}`}>
+        <Link to={`/classes/show/${classeId}`}>
           <EyeOpenIcon className='mr-2 h-4 w-4' />
         </Link>
         <span className='sr-only'>View</span>
@@ -72,7 +77,7 @@ export function DataTableRowActions<TData>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end' className='w-[160px]'>
-          <Link to={`/classes/edit/${classe.id}`}>
+          <Link to={`/classes/edit/${classeId}`}>
             <DropdownMenuItem>Edit</DropdownMenuItem>
           </Link>
           <DropdownMenuItem onSelect={() => setOpenDeleteDialog(true)}>
@@ -88,8 +93,8 @@ export function DataTableRowActions<TData>({
             <DialogTitle>Confirmer la suppression</DialogTitle>
           </DialogHeader>
           <p>
-            Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est
-            irréversible.
+            Êtes-vous sûr de vouloir retirer cet étudiant de la classe ? Cette
+            action est irréversible.
           </p>
           <DialogFooter>
             <Button variant='ghost' onClick={() => setOpenDeleteDialog(false)}>
@@ -100,7 +105,7 @@ export function DataTableRowActions<TData>({
               onClick={handleDelete}
               loading={isDeleting}
             >
-              Supprimer
+              Retirer
             </Button>
           </DialogFooter>
         </DialogContent>

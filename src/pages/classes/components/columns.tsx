@@ -67,39 +67,7 @@ export const columns: ColumnDef<Classe>[] = [
       )
     },
   },
-  {
-    accessorKey: 'students',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Étudiants' />
-    ),
-    cell: ({ row }) => {
-      const students = row.getValue('students')
-      return (
-        <HoverCard>
-          <HoverCardTrigger asChild>
-            <span className='cursor-pointer text-blue-600'>
-              {students.length} Étudiants
-            </span>
-          </HoverCardTrigger>
-          <HoverCardContent className='w-64'>
-            <div className='space-y-2'>
-              {students.length > 0 ? (
-                students.map((student: any, index: number) => (
-                  <div key={index} className='flex items-center space-x-2'>
-                    <span>
-                      {student.name} {student.surname}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div>Aucun étudiant</div>
-              )}
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      )
-    },
-  },
+
   {
     accessorKey: 'levels',
     header: ({ column }) => (
