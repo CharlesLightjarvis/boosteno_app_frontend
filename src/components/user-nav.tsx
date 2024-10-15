@@ -64,7 +64,12 @@ export function UserNav() {
           }
         )
         console.log('Logout successful:', response.data)
-        navigate('/sign-in') // Redirige vers la page de connexion
+
+        // Recharger la page après la déconnexion pour réinitialiser l'état
+        window.location.assign('/sign-in')
+
+        // Optionnel : si tu veux aussi rediriger après la déconnexion
+        // navigate('/sign-in')
       } catch (error) {
         console.error('Error during logout:', error)
       }

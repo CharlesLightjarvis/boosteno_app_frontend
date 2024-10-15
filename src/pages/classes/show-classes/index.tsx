@@ -158,6 +158,7 @@ export default function ShowClasseComponent() {
                 <TabsTrigger value='Etudiants'>Etudiants</TabsTrigger>
                 <TabsTrigger value='Cours'>Cours</TabsTrigger>
                 <TabsTrigger value='Demandes'>Demandes</TabsTrigger>
+                <TabsTrigger value='Absences'>Absences</TabsTrigger>
               </TabsList>
 
               {/* Section pour afficher les informations de la classe */}
@@ -256,11 +257,15 @@ export default function ShowClasseComponent() {
           </TabsContent>
 
           <TabsContent value='Cours'>
-            <div className='text-center'>Contenu des cours à venir...</div>
+            <div className='text-center'>Contenu des Cours à venir...</div>
           </TabsContent>
 
           <TabsContent value='Demandes'>
-            <RolesPermissions />
+            <div className='text-center'>Contenu des Demandes à venir...</div>
+          </TabsContent>
+
+          <TabsContent value='Absences'>
+            <div className='text-center'>Contenu des Absences à venir...</div>
           </TabsContent>
         </Tabs>
       </Layout.Body>

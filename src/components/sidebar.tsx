@@ -77,7 +77,7 @@ export default function Sidebar({
         >
           <div className={`flex items-center ${!isCollapsed ? 'gap-2' : ''}`}>
             <img
-              src='/images/boostlogo.png' // Chemin de l'image
+              src='/src/images/boostlogo.png' // Chemin de l'image
               alt='Website Logo'
               className={`transition-all ${isCollapsed ? 'h-6 w-6' : 'h-8 w-8'}`}
             />

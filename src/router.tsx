@@ -4,43 +4,48 @@ import GeneralError from './pages/errors/general-error'
 import NotFoundError from './pages/errors/not-found-error'
 import MaintenanceError from './pages/errors/maintenance-error'
 import UnauthorisedError from './pages/errors/unauthorised-error'
-import { checkAuth } from './auth-service'
-// import { Component } from 'react'
+import { checkAuth } from './auth-service' // Service d'authentification
 
-// Fonction pour limiter l'accès basé sur le rôle
-const roleGuard = (Component, allowedRoles) => async () => {
-  const authStatus = await checkAuth()
+// Fonction pour limiter l'accès et retourner différents composants selon le rôle
+const roleGuardWithDifferentComponents =
+  (
+    roleComponentMap // Un objet contenant le mapping rôle => composant
+  ) =>
+  async () => {
+    const authStatus = await checkAuth()
 
-  // Vérifier si l'utilisateur est authentifié et si son rôle est autorisé
-  if (authStatus.authenticated && allowedRoles.includes(authStatus.role)) {
-    return { Component }
-  } else if (authStatus.authenticated) {
-    return { Component: UnauthorisedError } // Rediriger vers une page non autorisée
-  } else {
-    return { Component: () => <Navigate to='/401' /> } // Rediriger vers la page non autorisée
+    if (authStatus.authenticated) {
+      const userRole = authStatus.role
+
+      // Si le rôle de l'utilisateur est autorisé, retourne le composant spécifique
+      if (roleComponentMap[userRole]) {
+        return { Component: roleComponentMap[userRole] }
+      } else {
+        return { Component: UnauthorisedError } // Si non autorisé
+      }
+    } else {
+      return { Component: () => <Navigate to='/401' /> } // Redirection si non authentifié
+    }
   }
-}
 
-// Fonction pour afficher différents dashboards selon le rôle
+// Fonction pour gérer le dashboard selon le rôle
 const dashboardGuard = async () => {
   const authStatus = await checkAuth()
 
-  // Vérifier le rôle et retourner le bon composant de dashboard
   if (authStatus.authenticated) {
     if (authStatus.role === 'admin') {
       return {
-        Component: (await import('./pages/dashboard/index')).default,
+        Component: (await import('./pages/dashboard')).default,
       }
     } else if (authStatus.role === 'student') {
       return {
-        Component: (await import('./pages/dashboard/student/dashboard-student'))
-          .default,
+        Component: (await import('./pages/dashboard/student')).default,
       }
     } else {
-      return { Component: UnauthorisedError } // Si le rôle n'est ni admin ni student
+      return { Component: UnauthorisedError }
     }
   } else {
-    return { Component: () => <Navigate to='/401' /> } // Rediriger vers la page non autorisée
+    return { Component: () => <Navigate to='/401' /> }
   }
 }
 
@@ -70,7 +75,6 @@ const router = createBrowserRouter([
       Component: (await import('./pages/auth/otp')).default,
     }),
   },
-
   // Routes protégées avec vérification de l'authentification et des rôles
   {
     path: '/',
@@ -86,77 +90,63 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        lazy: dashboardGuard, // Utiliser la fonction pour afficher le bon dashboard
-      },
-      {
-        path: 'tasks',
-        lazy: roleGuard(
-          (await import('./pages/tasks')).default,
-          ['admin'] // Seuls les admins et managers peuvent accéder à cette route
-        ),
+        lazy: dashboardGuard, // Affiche le bon dashboard selon le rôle
       },
       {
         path: 'chats',
-        lazy: roleGuard(
-          (await import('./pages/chats')).default,
-          ['student', 'admin'] // Accès pour plusieurs rôles
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/chats')).default, // Composant pour admin
+          student: (await import('./pages/chats/student')).default, // Composant pour student
+        }),
       },
       {
         path: 'apps',
-        lazy: roleGuard(
-          (await import('./pages/apps')).default,
-          ['student', 'admin'] // Accès pour admins et développeurs
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/apps')).default, // Composant pour admin
+          student: (await import('./pages/apps/student')).default, // Composant pour student
+        }),
       },
       {
         path: 'users',
-        lazy: roleGuard(
-          (await import('./pages/users')).default,
-          ['admin'] // Accès réservé aux admins uniquement
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/users')).default, // Composant pour admin
+        }),
       },
       {
         path: 'classes',
-        lazy: roleGuard(
-          (await import('./pages/classes')).default,
-          ['admin'] // Accès réservé aux admins uniquement
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/classes')).default, // Composant pour admin
+        }),
       },
       {
         path: 'users/addNewUser',
-        lazy: roleGuard(
-          (await import('./pages/users/add-users')).default,
-          ['admin'] // Accès réservé aux admins uniquement
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/users/add-users')).default, // Composant pour admin
+        }),
       },
       {
         path: 'classes/addNewClasse',
-        lazy: roleGuard(
-          (await import('./pages/classes/add-classes')).default,
-          ['admin'] // Accès réservé aux admins uniquement
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/classes/add-classes')).default,
+        }),
       },
       {
         path: 'users/edit/:id',
-        lazy: roleGuard(
-          (await import('./pages/users/edit-users')).default,
-          ['admin'] // Accès réservé aux admins uniquement
+        lazy: roleGuardWithDifferentComponents(
+          (await import('./pages/users/edit-users')).default
         ),
       },
       {
         path: 'classes/edit/:id',
-        lazy: roleGuard(
-          (await import('./pages/classes/edit-classes')).default,
-          ['admin'] // Accès réservé aux admins uniquement
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/classes/edit-classes')).default,
+        }),
       },
       {
         path: 'classes/show/:id',
-        lazy: roleGuard(
-          (await import('./pages/classes/show-classes')).default,
-          ['admin'] // Accès réservé aux admins uniquement
-        ),
+        lazy: roleGuardWithDifferentComponents({
+          admin: (await import('./pages/classes/show-classes')).default,
+        }),
       },
       {
         path: 'settings',
@@ -206,16 +196,15 @@ const router = createBrowserRouter([
           },
         ],
       },
+      // Autres routes protégées...
     ],
   },
-
   // Error routes
   { path: '/500', Component: GeneralError },
   { path: '/404', Component: NotFoundError },
   { path: '/503', Component: MaintenanceError },
   { path: '/401', Component: UnauthorisedError },
-
-  // Fallback 404 route
+  // Route fallback 404
   { path: '*', Component: NotFoundError },
 ])
 

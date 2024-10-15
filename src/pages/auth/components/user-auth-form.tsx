@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
+// import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
 import {
   Form,
   FormControl,
@@ -25,29 +25,32 @@ const getCookie = (name: string) => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
   if (parts.length === 2) return parts.pop()?.split(';').shift()
+  return null
 }
 
-// Fonction de login
-const login = async (email: string, password: string, navigate: any) => {
+// Fonction de login avec token CSRF
+const login = async (email: string, password: string) => {
   try {
-    await axios.get('/sanctum/csrf-cookie')
+    await axios.get('/sanctum/csrf-cookie') // Récupérer le token CSRF
     const csrfToken = getCookie('XSRF-TOKEN')
-    if (csrfToken) {
-      const response = await axios.post(
-        'api/v1/public/login',
-        { email, password },
-        { headers: { 'X-XSRF-TOKEN': decodeURIComponent(csrfToken) } }
-      )
-      console.log('Login successful', response.data)
 
-      // Renvoyer true en cas de succès
-      return true
-    } else {
+    if (!csrfToken) {
       throw new Error('CSRF token not found')
     }
+
+    // Effectuer la requête de login avec le token CSRF en en-tête
+    const response = await axios.post(
+      '/api/v1/public/login',
+      { email, password },
+      {
+        headers: {
+          'X-XSRF-TOKEN': decodeURIComponent(csrfToken),
+        },
+      }
+    )
+    return response.data // Retourner la réponse si le login est réussi
   } catch (error) {
-    console.error('Login failed', error)
-    return false
+    throw new Error('Login failed') // Propager l'erreur pour la capturer
   }
 }
 
@@ -68,7 +71,8 @@ const formSchema = z.object({
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate() // Appelle useNavigate à l'intérieur du composant
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,14 +84,22 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
-    const success = await login(data.email, data.password, navigate)
-    setIsLoading(false)
+    setErrorMessage(null) // Réinitialiser l'erreur avant un nouvel essai
 
-    console.log('Login success:', success) // Vérifie si le succès est bien renvoyé
+    try {
+      const result = await login(data.email, data.password)
+      console.log('Login successful', result)
 
-    if (success) {
-      console.log('Navigating to /')
-      navigate('/users') // Redirige vers la page principale
+      // Rediriger vers la page des utilisateurs après succès
+      window.location.assign('/')
+      // navigate('/', { replace: true })
+    } catch (error) {
+      setErrorMessage(
+        'Login failed. Please check your credentials and try again.'
+      )
+      console.error(error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -130,11 +142,17 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                 </FormItem>
               )}
             />
+
+            {/* Message d'erreur */}
+            {errorMessage && (
+              <div className='text-sm text-red-500'>{errorMessage}</div>
+            )}
+
             <Button className='mt-2' loading={isLoading}>
               Login
             </Button>
 
-            <div className='relative my-2'>
+            {/* <div className='relative my-2'>
               <div className='absolute inset-0 flex items-center'>
                 <span className='w-full border-t' />
               </div>
@@ -163,8 +181,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                 leftSection={<IconBrandFacebook className='h-4 w-4' />}
               >
                 Facebook
-              </Button>
-            </div>
+              </Button> */}
+            {/* </div> */}
           </div>
         </form>
       </Form>
