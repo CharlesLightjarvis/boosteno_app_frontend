@@ -15,9 +15,9 @@ export default defineConfig({
     },
   },
   esbuild: {
-    target: 'esnext', // Cible ESNext pour inclure le support de top-level await
+    target: 'es2022', // Cible ES2022 pour plus de compatibilité
   },
   build: {
-    target: 'esnext', // Cible de compilation pour ESNext
+    target: 'es2022', // Cible de compilation pour ES2022
   },
 })
