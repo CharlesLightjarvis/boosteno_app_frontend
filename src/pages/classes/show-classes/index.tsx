@@ -20,6 +20,7 @@ import { DataTableRowActions } from './components/data-table-row-actions'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchStudents } from '../../../store/studentsSlice'
 import { RootState, AppDispatch } from '../../../store/store'
+import Courses from '@/pages/courses/courses'
 
 export default function ShowClasseComponent() {
   const { id } = useParams() // Récupération de l'id de la classe à éditer
@@ -257,7 +258,7 @@ export default function ShowClasseComponent() {
           </TabsContent>
 
           <TabsContent value='Cours'>
-            <div className='text-center'>Contenu des Cours à venir...</div>
+            <Courses />
           </TabsContent>
 
           <TabsContent value='Demandes'>

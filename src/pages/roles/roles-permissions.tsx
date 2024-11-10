@@ -1,80 +1,105 @@
 import { useState, useEffect } from 'react'
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/custom/button'
+import { Button } from '../../components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
-  DotsHorizontalIcon,
-  Pencil1Icon,
-  TrashIcon,
-  PlusIcon,
-} from '@radix-ui/react-icons'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import axios from 'axios'
+import {
+  Search,
+  MoreHorizontal,
+  Plus,
+  Edit,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react'
 
 // Fonction pour récupérer le token CSRF à partir des cookies
-const getCookie = (name) => {
+const getCookie = (name: string) => {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
   if (parts.length === 2) return parts.pop()?.split(';').shift()
 }
 
-function RolesPermissions() {
-  const [roles, setRoles] = useState([]) // Stocker les rôles
-  const [permissions, setPermissions] = useState([]) // Stocker les permissions
-  const [isCreatingRole, setIsCreatingRole] = useState(false) // Modal pour créer
-  const [isEditingRole, setIsEditingRole] = useState(false) // Modal pour éditer
-  const [isDeletingRole, setIsDeletingRole] = useState(false) // Modal pour suppression
-  const [currentRole, setCurrentRole] = useState(null) // Rôle en cours d'édition/suppression
-  const [newRoleName, setNewRoleName] = useState('') // Nom de rôle ou modifié
-  const [selectedPermissions, setSelectedPermissions] = useState([]) // Permissions sélectionnées
+interface Permission {
+  id: number
+  name: string
+  description: string
+}
 
-  // Récupération des rôles et permissions
+interface Role {
+  id: number
+  name: string
+  permissions: Permission[]
+}
+
+export default function RolesPermissions() {
+  const [roles, setRoles] = useState<Role[]>([])
+  const [permissions, setPermissions] = useState<Permission[]>([])
+  const [isCreatingRole, setIsCreatingRole] = useState(false)
+  const [isEditingRole, setIsEditingRole] = useState(false)
+  const [isDeletingRole, setIsDeletingRole] = useState(false)
+  const [currentRole, setCurrentRole] = useState<Role | null>(null)
+  const [newRoleName, setNewRoleName] = useState('')
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortColumn, setSortColumn] = useState<'name' | 'permissions'>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
   useEffect(() => {
-    async function fetchRoles() {
-      try {
-        const response = await axios.get('/api/v1/admin/roles')
-        setRoles(response.data.data)
-      } catch (error) {
-        toast.error('Erreur lors de la récupération des rôles')
-      }
-    }
-
-    async function fetchPermissions() {
-      try {
-        const response = await axios.get('/api/v1/admin/permissions')
-        setPermissions(response.data.data)
-      } catch (error) {
-        toast.error('Erreur lors de la récupération des permissions')
-      }
-    }
-
     fetchRoles()
     fetchPermissions()
   }, [])
 
-  // Création d'un nouveau rôle avec assignation des permissions
+  async function fetchRoles() {
+    try {
+      const response = await axios.get('/api/v1/admin/roles')
+      setRoles(response.data.data)
+    } catch (error) {
+      toast.error('Erreur lors de la récupération des rôles')
+    }
+  }
+
+  async function fetchPermissions() {
+    try {
+      const response = await axios.get('/api/v1/admin/permissions')
+      setPermissions(response.data.data)
+    } catch (error) {
+      toast.error('Erreur lors de la récupération des permissions')
+    }
+  }
+
   const handleCreateRole = async () => {
     if (!newRoleName || selectedPermissions.length === 0) {
       toast.error('Veuillez remplir le nom et sélectionner des permissions.')
@@ -83,7 +108,6 @@ function RolesPermissions() {
 
     try {
       const xsrfToken = getCookie('XSRF-TOKEN')
-
       const response = await axios.post(
         '/api/v1/admin/roles',
         { name: newRoleName, permissions: selectedPermissions },
@@ -93,7 +117,6 @@ function RolesPermissions() {
           },
         }
       )
-
       const createdRole = response.data.data
       setRoles([...roles, createdRole])
       toast.success('Rôle créé et permissions assignées avec succès')
@@ -103,16 +126,14 @@ function RolesPermissions() {
     }
   }
 
-  // Édition d'un rôle existant avec assignation des nouvelles permissions
   const handleEditRole = async () => {
-    if (!newRoleName || selectedPermissions.length === 0) {
+    if (!newRoleName || selectedPermissions.length === 0 || !currentRole) {
       toast.error('Veuillez remplir le nom et sélectionner des permissions.')
       return
     }
 
     try {
       const xsrfToken = getCookie('XSRF-TOKEN')
-
       const response = await axios.put(
         `/api/v1/admin/roles/${currentRole.id}`,
         { name: newRoleName, permissions: selectedPermissions },
@@ -122,7 +143,6 @@ function RolesPermissions() {
           },
         }
       )
-
       const updatedRole = response.data.data
       const updatedRoles = roles.map((role) =>
         role.id === currentRole.id ? updatedRole : role
@@ -135,8 +155,9 @@ function RolesPermissions() {
     }
   }
 
-  // Suppression d'un rôle avec confirmation
   const handleDeleteRole = async () => {
+    if (!currentRole) return
+
     try {
       const xsrfToken = getCookie('XSRF-TOKEN')
       await axios.delete(`/api/v1/admin/roles/${currentRole.id}`, {
@@ -146,20 +167,18 @@ function RolesPermissions() {
       })
       setRoles(roles.filter((role) => role.id !== currentRole.id))
       toast.success('Rôle supprimé avec succès')
-      setIsDeletingRole(false) // Fermer le modal après suppression
+      setIsDeletingRole(false)
     } catch (error) {
       toast.error('Erreur lors de la suppression du rôle')
     }
   }
 
-  // Gestion des permissions via le Switch
-  const handlePermissionChange = (id) => {
+  const handlePermissionChange = (id: number) => {
     setSelectedPermissions((prev) =>
       prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
     )
   }
 
-  // Réinitialisation du formulaire
   const resetForm = () => {
     setNewRoleName('')
     setSelectedPermissions([])
@@ -168,115 +187,205 @@ function RolesPermissions() {
     setIsEditingRole(false)
   }
 
-  // Initialisation de l'édition d'un rôle
-  const startEditingRole = (role) => {
+  const startEditingRole = (role: Role) => {
     setCurrentRole(role)
     setNewRoleName(role.name)
     setSelectedPermissions(role.permissions.map((permission) => permission.id))
     setIsEditingRole(true)
   }
 
-  // Initialisation de la suppression d'un rôle
-  const startDeletingRole = (role) => {
+  const startDeletingRole = (role: Role) => {
     setCurrentRole(role)
     setIsDeletingRole(true)
   }
 
+  const filteredRoles = roles.filter((role) =>
+    role.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const sortedRoles = [...filteredRoles].sort((a, b) => {
+    if (sortColumn === 'name') {
+      return sortDirection === 'asc'
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name)
+    } else {
+      return sortDirection === 'asc'
+        ? a.permissions.length - b.permissions.length
+        : b.permissions.length - a.permissions.length
+    }
+  })
+
+  const toggleSort = (column: 'name' | 'permissions') => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
   return (
-    <div>
-      <div className='mb-2 flex items-center justify-between space-y-2'>
-        <div>
-          {/* <h2 className='text-2xl font-bold tracking-tight'>Bienvenue!</h2> */}
-          <p className='text-muted-foreground'>
-            Ici vous pouvez gérer les rôles et les permissions!
-          </p>
-        </div>
-      </div>
-      <div className='flex justify-between'>
-        <div className='mt-3 flex w-full justify-end'>
-          <Button
-            onClick={() => setIsCreatingRole(true)}
-            className='flex items-center bg-blue-500 text-white'
-          >
-            <PlusIcon className='mr-2 h-4 w-4' />
-            Nouveau
-          </Button>
-        </div>
+    <div className='container mx-auto px-4 py-8'>
+      <div className='mb-8'>
+        <h1 className='text-3xl font-bold text-gray-900'>
+          Gestion des Rôles et Permissions
+        </h1>
+        <p className='mt-2 text-gray-600'>
+          Gérez efficacement les rôles et les permissions de votre application
+        </p>
       </div>
 
-      {/* Rôles et Permissions avec Accordéon (Affichage 2 colonnes sur grand écran) */}
-      <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-        {roles.map((role, index) => (
-          <Accordion key={index} type='single' collapsible>
-            <AccordionItem value={`role-${role.id}`}>
-              <AccordionTrigger>
-                <div className='flex w-full items-center justify-between'>
-                  <h3 className='ml-4'>{role.name}</h3>
+      <div className='mb-6 flex items-center justify-between'>
+        <div className='relative'>
+          <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400' />
+          <Input
+            type='text'
+            placeholder='Rechercher un rôle...'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className='pl-10'
+          />
+        </div>
+        <Button
+          onClick={() => setIsCreatingRole(true)}
+          className='bg-blue-600 text-white hover:bg-blue-700'
+        >
+          <Plus className='mr-2 h-4 w-4' />
+          Nouveau Rôle
+        </Button>
+      </div>
+
+      <div className='rounded-md border'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className='w-[300px]'>
+                <button
+                  className='flex items-center'
+                  onClick={() => toggleSort('name')}
+                >
+                  Nom du Rôle
+                  {sortColumn === 'name' &&
+                    (sortDirection === 'asc' ? (
+                      <ChevronUp className='ml-2 h-4 w-4' />
+                    ) : (
+                      <ChevronDown className='ml-2 h-4 w-4' />
+                    ))}
+                </button>
+              </TableHead>
+              <TableHead>
+                <button
+                  className='flex items-center'
+                  onClick={() => toggleSort('permissions')}
+                >
+                  Permissions
+                  {sortColumn === 'permissions' &&
+                    (sortDirection === 'asc' ? (
+                      <ChevronUp className='ml-2 h-4 w-4' />
+                    ) : (
+                      <ChevronDown className='ml-2 h-4 w-4' />
+                    ))}
+                </button>
+              </TableHead>
+              <TableHead className='text-right'>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedRoles.map((role) => (
+              <TableRow key={role.id}>
+                <TableCell className='font-medium'>{role.name}</TableCell>
+                <TableCell>
+                  <div className='flex flex-wrap gap-1'>
+                    {role.permissions.slice(0, 3).map((permission) => (
+                      <Badge key={permission.id} variant='secondary'>
+                        {permission.name}
+                      </Badge>
+                    ))}
+                    {role.permissions.length > 3 && (
+                      <Badge variant='secondary'>
+                        +{role.permissions.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className='text-right'>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant='ghost' className='mr-4 text-gray-500'>
-                        <DotsHorizontalIcon className='h-5 w-5' />
+                      <Button variant='ghost' className='h-8 w-8 p-0'>
+                        <span className='sr-only'>Ouvrir le menu</span>
+                        <MoreHorizontal className='h-4 w-4' />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
+                    <DropdownMenuContent align='end'>
                       <DropdownMenuItem onClick={() => startEditingRole(role)}>
-                        <Pencil1Icon className='mr-2 h-4 w-4' />
-                        Éditer
+                        <Edit className='mr-2 h-4 w-4' />
+                        Modifier
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => startDeletingRole(role)}>
-                        <TrashIcon className='mr-2 h-4 w-4' />
+                        <Trash2 className='mr-2 h-4 w-4' />
                         Supprimer
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className='ml-4 space-y-2'>
-                  {role.permissions.map((permission, permIndex) => (
-                    <Badge key={permIndex} variant='outline' className='mr-2'>
-                      {permission.name}: {permission.description}
-                    </Badge>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        ))}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Modal pour créer un rôle */}
       <Dialog open={isCreatingRole} onOpenChange={setIsCreatingRole}>
-        <DialogContent>
+        <DialogContent className='sm:max-w-[555px]'>
           <DialogHeader>
             <DialogTitle>Créer un Nouveau Rôle</DialogTitle>
           </DialogHeader>
-          <Input
-            placeholder='Nom du Rôle'
-            value={newRoleName}
-            onChange={(e) => setNewRoleName(e.target.value)}
-          />
-          <div className='mt-4 space-y-4'>
-            {permissions.map((permission) => (
-              <div
-                key={permission.id}
-                className='flex items-center justify-between'
-              >
-                <div>
-                  <h3 className='font-medium'>{permission.name}</h3>
-                  <p className='text-sm text-gray-500'>
-                    {permission.description}
-                  </p>
+          <div className='grid gap-4 py-4'>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <label htmlFor='name' className='text-right'>
+                Nom
+              </label>
+              <Input
+                id='name'
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                className='col-span-3'
+              />
+            </div>
+            <div className='grid grid-cols-4 items-start gap-4'>
+              <label className='text-right'>Permissions</label>
+              <ScrollArea className='max-h-[200px] w-[240px] overflow-y-auto rounded-md border p-4 sm:w-[380px]'>
+                <div className='space-y-4'>
+                  {permissions.map((permission) => (
+                    <div
+                      key={permission.id}
+                      className='flex items-start space-x-2'
+                    >
+                      <Checkbox
+                        id={`permission-${permission.id}`}
+                        checked={selectedPermissions.includes(permission.id)}
+                        onCheckedChange={() =>
+                          handlePermissionChange(permission.id)
+                        }
+                      />
+                      <div className='grid gap-1.5 leading-none'>
+                        <label
+                          htmlFor={`permission-${permission.id}`}
+                          className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                        >
+                          {permission.name}
+                        </label>
+                        <p className='text-sm text-muted-foreground'>
+                          {permission.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <Switch
-                  checked={selectedPermissions.includes(permission.id)}
-                  onCheckedChange={() => handlePermissionChange(permission.id)}
-                />
-              </div>
-            ))}
+              </ScrollArea>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant='ghost' onClick={resetForm}>
+            <Button variant='outline' onClick={resetForm}>
               Annuler
             </Button>
             <Button onClick={handleCreateRole}>Créer</Button>
@@ -284,38 +393,58 @@ function RolesPermissions() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal pour éditer un rôle */}
       <Dialog open={isEditingRole} onOpenChange={setIsEditingRole}>
-        <DialogContent>
+        <DialogContent className='sm:max-w-[555px]'>
           <DialogHeader>
             <DialogTitle>Modifier le Rôle</DialogTitle>
           </DialogHeader>
-          <Input
-            placeholder='Nom du Rôle'
-            value={newRoleName}
-            onChange={(e) => setNewRoleName(e.target.value)}
-          />
-          <div className='mt-4 space-y-4'>
-            {permissions.map((permission) => (
-              <div
-                key={permission.id}
-                className='flex items-center justify-between'
-              >
-                <div>
-                  <h3 className='font-medium'>{permission.name}</h3>
-                  <p className='text-sm text-gray-500'>
-                    {permission.description}
-                  </p>
+          <div className='grid gap-4 py-4'>
+            <div className='grid grid-cols-4 items-center gap-4'>
+              <label htmlFor='name' className='text-right'>
+                Nom
+              </label>
+              <Input
+                id='name'
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                className='col-span-3'
+              />
+            </div>
+            <div className='grid grid-cols-4 items-start gap-4'>
+              <label className='text-right'>Permissions</label>
+              <ScrollArea className='max-h-[200px] w-[240px] overflow-y-auto rounded-md border p-4 sm:w-[380px]'>
+                <div className='space-y-4'>
+                  {permissions.map((permission) => (
+                    <div
+                      key={permission.id}
+                      className='flex items-start space-x-2'
+                    >
+                      <Checkbox
+                        id={`permission-${permission.id}`}
+                        checked={selectedPermissions.includes(permission.id)}
+                        onCheckedChange={() =>
+                          handlePermissionChange(permission.id)
+                        }
+                      />
+                      <div className='grid gap-1.5 leading-none'>
+                        <label
+                          htmlFor={`permission-${permission.id}`}
+                          className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                        >
+                          {permission.name}
+                        </label>
+                        <p className='text-sm text-muted-foreground'>
+                          {permission.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <Switch
-                  checked={selectedPermissions.includes(permission.id)}
-                  onCheckedChange={() => handlePermissionChange(permission.id)}
-                />
-              </div>
-            ))}
+              </ScrollArea>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant='ghost' onClick={resetForm}>
+            <Button variant='outline' onClick={resetForm}>
               Annuler
             </Button>
             <Button onClick={handleEditRole}>Sauvegarder</Button>
@@ -323,7 +452,6 @@ function RolesPermissions() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal pour confirmer la suppression */}
       <Dialog open={isDeletingRole} onOpenChange={setIsDeletingRole}>
         <DialogContent>
           <DialogHeader>
@@ -334,7 +462,7 @@ function RolesPermissions() {
             irréversible.
           </p>
           <DialogFooter>
-            <Button variant='ghost' onClick={() => setIsDeletingRole(false)}>
+            <Button variant='outline' onClick={() => setIsDeletingRole(false)}>
               Annuler
             </Button>
             <Button variant='destructive' onClick={handleDeleteRole}>
@@ -346,5 +474,3 @@ function RolesPermissions() {
     </div>
   )
 }
-
-export default RolesPermissions
