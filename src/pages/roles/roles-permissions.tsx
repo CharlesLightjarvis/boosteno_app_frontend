@@ -225,11 +225,8 @@ export default function RolesPermissions() {
   }
 
   return (
-    <div className='container mx-auto px-4 py-8'>
+    <div className='container mx-auto px-4'>
       <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-gray-900'>
-          Gestion des Rôles et Permissions
-        </h1>
         <p className='mt-2 text-gray-600'>
           Gérez efficacement les rôles et les permissions de votre application
         </p>

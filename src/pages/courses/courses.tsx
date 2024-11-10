@@ -240,7 +240,9 @@ export default function CourseManagement() {
   return (
     <div className=' mx-auto'>
       <div className='mb-8 flex items-center justify-between'>
-        <h1 className='text-3xl font-bold'>Gestion des Cours</h1>
+        <p className='mt-2 text-gray-600'>
+          Ici vous pouvez gérer les Cours de la Classe
+        </p>
         <div className='flex items-center space-x-4'>
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400' />
