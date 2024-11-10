@@ -7,11 +7,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: 'boostlearn.test',
-    port: 3000
+    port: 3000,
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  esbuild: {
+    target: 'esnext', // Cible ESNext pour inclure le support de top-level await
+  },
+  build: {
+    target: 'esnext', // Cible de compilation pour ESNext
   },
 })
